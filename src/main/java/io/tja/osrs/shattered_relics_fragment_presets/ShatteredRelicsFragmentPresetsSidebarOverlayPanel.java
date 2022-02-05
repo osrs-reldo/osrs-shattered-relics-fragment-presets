@@ -23,12 +23,13 @@ public class ShatteredRelicsFragmentPresetsSidebarOverlayPanel extends OverlayPa
     private final LineComponent spacer;
     private final LineComponent newPresetButtonComponent;
     private final LineComponent deletePresetButtonComponent;
+	private final LineComponent importPresetButtonComponent;
 
-    private final int SIDEBAR_WIDTH = 120;
-    private final int SIDEBAR_RIGHT_MARGIN = 12;
-    private final int SIDEBAR_TOP_MARGIN = 4;
+	private final int SIDEBAR_WIDTH = 120;
+	private final int SIDEBAR_RIGHT_MARGIN = 12;
+	private final int SIDEBAR_TOP_MARGIN = 4;
 
-    private boolean isFixedWidth;
+	private boolean isFixedWidth;
 
     private final Map<Preset, LineComponent> presetButtonComponents = new HashMap<>();
 
@@ -39,8 +40,9 @@ public class ShatteredRelicsFragmentPresetsSidebarOverlayPanel extends OverlayPa
         this.plugin = plugin;
         titleComponent = TitleComponent.builder().text("Presets").build();
         spacer = LineComponent.builder().build();
-        newPresetButtonComponent = LineComponent.builder().left("+ Save as preset").build();
-        deletePresetButtonComponent = LineComponent.builder().left("- Delete this preset").build();
+	    newPresetButtonComponent = LineComponent.builder().left("+ Save as preset").build();
+	    deletePresetButtonComponent = LineComponent.builder().left("- Delete this preset").build();
+	    importPresetButtonComponent = LineComponent.builder().left("++ Import a preset").build();
 
         setPosition(OverlayPosition.DYNAMIC);
         setLayer(OverlayLayer.ALWAYS_ON_TOP);
@@ -105,7 +107,8 @@ public class ShatteredRelicsFragmentPresetsSidebarOverlayPanel extends OverlayPa
         }
 
         plugin.newPresetButtonBounds = newPresetButtonComponent.getBounds();
-        plugin.deletePresetButtonBounds = deletePresetButtonComponent.getBounds();
+	    plugin.deletePresetButtonBounds = deletePresetButtonComponent.getBounds();
+	    plugin.importPresetButtonBounds = deletePresetButtonComponent.getBounds();
 
         return super.render(graphics);
     }
@@ -122,6 +125,7 @@ public class ShatteredRelicsFragmentPresetsSidebarOverlayPanel extends OverlayPa
             }
             panelComponent.getChildren().add(deletePresetButtonComponent);
         }
+	    panelComponent.getChildren().add(importPresetButtonComponent);
         panelComponent.getChildren().add(spacer);
 
         for (Preset p : plugin.allPresets) {

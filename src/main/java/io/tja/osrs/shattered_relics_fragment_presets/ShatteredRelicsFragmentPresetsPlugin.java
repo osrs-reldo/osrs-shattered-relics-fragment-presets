@@ -30,63 +30,11 @@ import java.util.stream.Collectors;
 
 @PluginDescriptor(name = "Fragment Presets")
 public class ShatteredRelicsFragmentPresetsPlugin extends Plugin implements MouseListener {
-    private final Set<String> FRAGMENTS = new HashSet<String>(Arrays.asList(new String[]{
-        "Alchemaniac",
-        "Arcane Conduit",
-        "Armadylean Decree",
-        "Bandosian Might",
-        "Barbarian Pest Wars",
-        "Bottomless Quiver",
-        "Catch Of The Day",
-        "Certified Farmer",
-        "Chef's Catch",
-        "Chinchonkers",
-        "Clued In",
-        "Deeper Pockets",
-        "Dine & Dash",
-        "Divine Restoration",
-        "Dragon On a Bit",
-        "Enchanted Jeweler",
-        "Golden Brick Road",
-        "Grave Robber",
-        "Homewrecker",
-        "Hot on the Trail",
-        "Imcando's Apprentice",
-        "Just Druid!",
-        "Larger Recharger",
-        "Livin' On A Prayer",
-        "Message In A Bottle",
-        "Mixologist",
-        "Molten Miner",
-        "Mother's Magic Fossils",
-        "Plank Stretcher",
-        "Praying Respects",
-        "Pro Tips",
-        "Profletchional",
-        "Rock Solid",
-        "Rogues' Chompy Farm",
-        "Rooty Tooty 2x Runeys",
-        "Rumple-Bow-String",
-        "Rune Escape",
-        "Saradominist Defence",
-        "Seedy Business",
-        "Slash & Burn",
-        "Slay 'n' Pay",
-        "Slay All Day",
-        "Smithing Double",
-        "Smooth Criminal",
-        "Special Discount",
-        "Superior Tracking",
-        "Tactical Duelist",
-        "Thrall Damage",
-        "Unholy Ranger",
-        "Unholy Warrior",
-        "Unholy Wizard",
-        "Venomaster",
-        "Zamorakian Sight"
-    }).stream().map(s -> s.toLowerCase()).collect(Collectors.toList()));
+    private final Set<String> FRAGMENTS = new HashSet<>(
+    	Arrays.stream(Fragment.values()).map(f -> f.getName().toLowerCase()).collect(Collectors.toList())
+    );
 
-    @Inject
+	@Inject
     private Client client;
 
     @Inject
@@ -129,6 +77,7 @@ public class ShatteredRelicsFragmentPresetsPlugin extends Plugin implements Mous
 
     public Rectangle newPresetButtonBounds; // set by overlay
     public Rectangle deletePresetButtonBounds; // set by overlay
+	public Rectangle importPresetButtonBounds; // set by overlay
 
     public List<Preset> allPresets = new ArrayList<>();
     public static Type PRESET_LIST_TYPE = new TypeToken<List<Preset>>() {
@@ -301,15 +250,15 @@ public class ShatteredRelicsFragmentPresetsPlugin extends Plugin implements Mous
                     if (trimmed.isEmpty()) {
                         return;
                     }
-                    savePreset(trimmed);
+                    savePreset(trimmed, equippedFragmentNames);
                 })
                 .build();
     }
 
-    private void savePreset(String presetName) {
+    private void savePreset(String presetName, Set<String> fragmentNames) {
         Preset preset = new Preset();
         preset.name = presetName;
-        preset.fragments = new HashSet<>(equippedFragmentNames);
+        preset.fragments = new HashSet<>(fragmentNames);
 
         for (int i = 0; i < allPresets.size(); i++) {
             if (allPresets.get(i).name.equalsIgnoreCase(presetName)) {
@@ -344,6 +293,36 @@ public class ShatteredRelicsFragmentPresetsPlugin extends Plugin implements Mous
                 .build();
     }
 
+	private void importPresetJson() {
+		chatboxPanelManager.openTextInput("Paste preset import from external source (ctrl+V):")
+			.addCharValidator(FILTERED_CHARS)
+			.onDone((inputJson) -> {
+				String presetJson = inputJson.trim();
+				Set<String> fragmentNames;
+				try
+				{
+					int[] fragmentIds = new Gson().fromJson(presetJson, int[].class);
+					fragmentNames = Arrays.stream(fragmentIds).mapToObj(Fragment::getFragmentNameFromId).collect(Collectors.toSet());
+				}
+				catch (Exception ex)
+				{
+					return;
+				}
+
+				chatboxPanelManager.openTextInput("Preset name (use the same name to overwrite):")
+					.addCharValidator(FILTERED_CHARS)
+					.onDone((presetName) -> {
+						String trimmed = presetName.trim();
+						if (trimmed.isEmpty()) {
+							return;
+						}
+						savePreset(trimmed, fragmentNames);
+					})
+					.build();
+			})
+			.build();
+	}
+
     private void loadPersistedPresets() {
         String json = configManager.getConfiguration(ShatteredRelicsFragmentPresetsConfig.CONFIG_GROUP,
                 ShatteredRelicsFragmentPresetsConfig.ALL_PRESETS);
@@ -374,6 +353,12 @@ public class ShatteredRelicsFragmentPresetsPlugin extends Plugin implements Mous
             mouseEvent.consume();
             return mouseEvent;
         }
+
+	    if (importPresetButtonBounds.contains(mouseEvent.getPoint())) {
+		    importPresetJson();
+		    mouseEvent.consume();
+		    return mouseEvent;
+	    }
 
         if (deletePresetButtonBounds != null && deletePresetButtonBounds.contains(mouseEvent.getPoint())) {
             deletePreset();
